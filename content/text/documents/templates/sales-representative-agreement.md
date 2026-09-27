@@ -11,8 +11,7 @@ authors:
 
 **Date:** {{date}}
 
-**Between:** {{client}} ("the Maker") and [the Group's contracting entity], a Minnesota
-business ("the Representative").
+**Between:** {{client}} ("the Maker") and {{contractingParty}} ("the Representative").
 
 1. **Appointment.** The Maker appoints the Representative as its independent sales
    representative to solicit orders for {{products}} ("the Products") from buyers in

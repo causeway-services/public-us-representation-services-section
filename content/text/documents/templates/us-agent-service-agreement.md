@@ -11,7 +11,7 @@ authors:
 
 **Date:** {{date}}
 
-**Between:** [the Group's contracting entity], a Minnesota business ("the Agent"), and
+**Between:** {{contractingParty}} ("the Agent"), and
 {{client}}, FDA registration or FEI number {{establishment}} ("the Client").
 
 1. **Appointment.** The Client appoints the Agent as its United States agent for its medical

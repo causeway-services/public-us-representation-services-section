@@ -9,7 +9,7 @@ authors:
 
 # US Representation Joint-Venture Caller Agreement
 
-**Between:** [the Group's contracting entity] ("the Group") and ______________________ ("the Caller").
+**Between:** {{contractingParty}} ("the Group") and ______________________ ("the Caller").
 
 1. **The venture.** The Group and the Caller jointly pursue US representation engagements with
    foreign makers: holding FDA US agent roles, selling makers' lines to US buyers on commission,

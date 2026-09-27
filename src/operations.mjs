@@ -11,8 +11,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { operation } from "@red-cup-engineering/computer-system-engine/rpc/operation";
 import { schemaFrom } from "@red-cup-engineering/json-schema-services-section/contracts";
-import { callQueue, contactActivity, contactOutcomes, currentOrders, enterpriseOf, enterpriseStore, funnel, groupBy, procedure, settingValues } from "@red-cup-engineering/organizing/enterprise";
-import { fillTemplate } from "@red-cup-engineering/land-contracts-services-section/pipeline";
+import { callQueue, contactActivity, contactOutcomes, currentOrders, enterpriseOf, enterpriseStore, fillTemplate, funnel, groupBy, procedure, settingValues } from "@red-cup-engineering/organizing/enterprise";
 import { DEVICE_REGISTRATION_LISTING, openfdaAll } from "@red-cup-engineering/openfda-services-section/client";
 import { fetchConsolidatedList } from "@red-cup-engineering/consolidated-screening-list-services-section/client";
 import { screenName, screeningIndex } from "@red-cup-engineering/consolidated-screening-list-services-section/screen";
@@ -83,7 +82,7 @@ const activitySchema = object("activity", { since: text, by: text });
  * @param {{dataRoot: string}} binding MetroPlat's binding; records land under its data root.
  * @param {{fetch?: typeof fetch}} [options]
  */
-export function usRepresentationOperations(binding, { fetch: fetchImpl, store = enterpriseStore(binding), now = () => Date.now() } = {}) {
+export function usRepresentationOperations(binding, { fetch: fetchImpl, store = enterpriseStore(binding), now = () => Date.now(), contractingParty = () => undefined } = {}) {
   const settings = () => settingValues(ENTERPRISE, store.read("setting", { enterprise: REPRESENTATION_ENTERPRISE }));
   const engagements = () => currentOrders(store.read("order", { enterprise: REPRESENTATION_ENTERPRISE }));
   const engagementOf = (id) => engagements().find((e) => e.order === id);
@@ -313,7 +312,7 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
         const engagement = id ? engagementOf(id) : undefined;
         const current = settings();
         const merged = {
-          date: new Date(now()).toISOString().slice(0, 10), annualFee: current["us-agent-annual-fee"], commissionPercent: Math.round(current["sales-commission"] * 1000) / 10,
+          date: new Date(now()).toISOString().slice(0, 10), contractingParty: contractingParty(REPRESENTATION_ENTERPRISE), annualFee: current["us-agent-annual-fee"], commissionPercent: Math.round(current["sales-commission"] * 1000) / 10,
           dayRate: current["local-presence-day-rate"], callerPercent: Math.round(current["caller-share"] * 1000) / 10,
           ...engagement, ...(engagement?.commissionRate ? { commissionPercent: Math.round(engagement.commissionRate * 1000) / 10 } : {}), ...values,
         };

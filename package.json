@@ -25,7 +25,6 @@
     "@red-cup-engineering/computer-system-engine": "0.1.0",
     "@red-cup-engineering/consolidated-screening-list-services-section": "0.1.0",
     "@red-cup-engineering/json-schema-services-section": "0.3.0",
-    "@red-cup-engineering/land-contracts-services-section": "0.1.0",
     "@red-cup-engineering/openfda-services-section": "0.1.0",
     "@red-cup-engineering/organizing": "0.1.0"
   },

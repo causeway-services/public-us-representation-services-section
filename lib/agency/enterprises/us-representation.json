@@ -2,6 +2,7 @@
   "id": "us-representation",
   "name": "US Representation",
   "kind": "market",
+  "entity": "561-group-llc",
   "faces": "Chinese companies selling into the United States that need people here: a US agent the FDA can reach, a salesperson who sells their line to US buyers on commission, and a local presence at trade shows and on the phone in US hours.",
   "offices": ["us-representation-caller", "us-agent-of-record", "sales-representative"],
   "contracts": ["us-representation-leading-goal", "maker-representation-chain-group"],
