@@ -57,6 +57,36 @@ Leads come from two networking clients in computer networking engineering:
 `consolidated-screening-list-services-section` (the US restricted-party list
 and name screening).
 
+## Roadmap to the first dollar
+
+The US agent offer comes first because it is the smallest job. Being a
+device maker's US agent means being a US address, phone and email the FDA
+can reach, and passing what the FDA sends on to the maker the same day. Most
+clients, most years, hear nothing from the FDA, which is how one agent can
+hold 741 of them.
+
+1. **A company to sign as.** The agreements need a legal entity (an LLC is
+   enough) with a bank account that can receive international wires.
+2. **The address and phone.** A US street address (not a PO box), a business
+   phone answered in US business hours, and a mailbox someone reads every
+   day.
+3. **A page to point to.** One web page saying who we are and what the
+   service is, in English and Chinese, since makers check before they pay.
+4. **Reach makers in the renewal window.** Pull the establishments list,
+   send the first email from the caller kit (October 1 to December 31), then
+   call those who answer.
+5. **Sign, screen, get named.** A maker that agrees is screened, signs the
+   US agent service agreement, and enters our details in its FDA
+   registration; we record it active.
+6. **Get paid.** Invoice; the maker wires the fee, which its bank releases
+   against the signed service contract in about five to ten business days.
+7. **Do the job.** Answer the phone and mail, forward FDA messages the same
+   day, remind clients of renewal next October.
+
+Sales representation and local presence come after: they need a product
+line worth selling and time to build a buyer list. Trade shows are one
+place to meet makers and buyers, not a requirement to start.
+
 ## Working it
 
 People work the business in the metroplex at ops.561.group, where their
