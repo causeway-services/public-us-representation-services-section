@@ -15,7 +15,7 @@ import { callQueue, contactActivity, contactOutcomes, currentOrders, enterpriseO
 import { fillTemplate } from "@red-cup-engineering/land-contracts-services-section/pipeline";
 import { DEVICE_REGISTRATION_LISTING, openfdaAll } from "@red-cup-engineering/openfda-services-section/client";
 import { fetchConsolidatedList } from "@red-cup-engineering/consolidated-screening-list-services-section/client";
-import { screenName } from "@red-cup-engineering/consolidated-screening-list-services-section/screen";
+import { screenName, screeningIndex } from "@red-cup-engineering/consolidated-screening-list-services-section/screen";
 import { agentMarket, clientKey, establishmentsFrom, leadRows } from "./leads.mjs";
 
 const SECTION_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -61,7 +61,8 @@ const limit = { type: "integer", minimum: 1, maximum: 500 };
 
 const pullSchema = object("pull", { country, limit: { type: "integer", minimum: 1 } });
 const marketSchema = object("agent-market", { country, limit });
-const findSchema = object("find", { country, province: text, city: text, device: text, deviceClass: { enum: ["class I", "class II", "class III"] }, agent: text, noAgent: boolean, minScore: number, limit });
+const SCREENING_READINGS = ["clear", "possible", "listed", "blocked"];
+const findSchema = object("find", { country, province: text, city: text, device: text, deviceClass: { enum: ["class I", "class II", "class III"] }, agent: text, noAgent: boolean, minScore: number, screening: { enum: SCREENING_READINGS }, limit });
 const queueSchema = object("call-queue", { country, province: text, device: text, by: text, limit, quietDays: number });
 const screenSchema = object("screen", { name: text, owners: texts, country, refresh: boolean }, ["name"]);
 const contactSchema = object("contact", {
@@ -100,28 +101,29 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
     try { fresh = !refresh && now() - statSync(path).mtimeMs < DAY_MS; } catch (error) { if (error?.code !== "ENOENT") throw error; }
     if (fresh && screeningList) return screeningList;
     if (fresh) {
-      screeningList = JSON.parse(readFileSync(path, "utf8"));
+      const held = JSON.parse(readFileSync(path, "utf8"));
+      screeningList = { ...held, index: screeningIndex(held.entries) };
       return screeningList;
     }
     const entries = await fetchConsolidatedList({ fetch: fetchImpl });
-    screeningList = { pulledAt: new Date(now()).toISOString(), entries };
+    const pulledAt = new Date(now()).toISOString();
     mkdirSync(dirname(path), { recursive: true });
-    writeFileSync(path, JSON.stringify(screeningList));
+    writeFileSync(path, JSON.stringify({ pulledAt, entries }));
+    screeningList = { pulledAt, entries, index: screeningIndex(entries) };
     return screeningList;
   }
+  const worstOf = (readings) => readings.reduce((worst, r) => (SCREENING_READINGS.indexOf(r) > SCREENING_READINGS.indexOf(worst) ? r : worst), "clear");
   async function screen(name, owners = [], countryCode, refresh = false) {
     const list = await screeningEntries(refresh);
-    const parties = [name, ...owners].filter(Boolean).map((party) => screenName(list.entries, party, { country: countryCode }));
-    const order = ["clear", "possible", "listed", "blocked"];
-    const reading = parties.reduce((worst, p) => (order.indexOf(p.reading) > order.indexOf(worst) ? p.reading : worst), "clear");
-    return Object.freeze({ listPulledAt: list.pulledAt, reading, parties: Object.freeze(parties) });
+    const parties = [name, ...owners].filter(Boolean).map((party) => screenName(list.index, party, { country: countryCode }));
+    return Object.freeze({ listPulledAt: list.pulledAt, reading: worstOf(parties.map((p) => p.reading)), parties: Object.freeze(parties) });
   }
 
   return Object.freeze([
     operation({
       verb: "representation-establishments-pull",
-      summary: "Pull a country's FDA-registered device establishments, with the US agent each names, into a dated snapshot.",
-      description: "Reads openFDA's device registration and listing data for one country (default CN, mainland China), merges listings into establishments, and writes the snapshot the find, market and call-queue verbs read.",
+      summary: "Pull a country's FDA-registered device establishments, with the US agent each names, screened against the consolidated screening list, into a dated snapshot.",
+      description: "Reads openFDA's device registration and listing data for one country (default CN, mainland China), merges listings into establishments, screens each establishment's name and its owner's against the consolidated screening list, and writes the snapshot the find, market and call-queue verbs read. Signing an engagement screens again.",
       domain: pullSchema,
       reads: ["openfda/device-registrationlisting"],
       writes: ["us-representation/establishments"],
@@ -129,13 +131,19 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
       run: async ({ country: countryCode = "CN", limit: max } = {}) => {
         const listings = [];
         for await (const listing of openfdaAll(DEVICE_REGISTRATION_LISTING, { search: `registration.iso_country_code:${countryCode}` }, { limit: max ?? Infinity, fetch: fetchImpl })) listings.push(listing);
-        const establishments = establishmentsFrom(listings);
+        const list = await screeningEntries();
+        const establishments = establishmentsFrom(listings).map((row) => {
+          const parties = [...new Set([row.name, row.owner].filter(Boolean))].map((party) => screenName(list.index, party, { country: countryCode }));
+          const matches = parties.flatMap((p) => p.matches.slice(0, 3).map((m) => ({ party: p.name, kind: m.kind, name: m.name, source: m.source, blocking: m.blocking })));
+          return { ...row, screening: { reading: worstOf(parties.map((p) => p.reading)), listPulledAt: list.pulledAt, matches } };
+        });
         const pulledAt = new Date(now()).toISOString();
         mkdirSync(snapshotDir(binding, countryCode), { recursive: true });
         const path = join(snapshotDir(binding, countryCode), `${pulledAt.slice(0, 10)}.json`);
         writeFileSync(path, JSON.stringify({ pulledAt, country: countryCode, listings: listings.length, establishments }));
         const market = agentMarket(establishments);
-        return Object.freeze({ path, pulledAt, country: countryCode, listings: listings.length, establishments: establishments.length, withoutAgent: market.withoutAgent, agents: market.agents, topAgents: market.ranked.slice(0, 10) });
+        const screened = Object.fromEntries(SCREENING_READINGS.map((r) => [r, establishments.filter((row) => row.screening.reading === r).length]));
+        return Object.freeze({ path, pulledAt, country: countryCode, listings: listings.length, establishments: establishments.length, screened, withoutAgent: market.withoutAgent, agents: market.agents, topAgents: market.ranked.slice(0, 10) });
       },
     }),
     operation({
@@ -155,7 +163,7 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
       summary: "Find establishments to call: by province, city, device, device class or US agent, scored with the reasons to call.",
       domain: findSchema,
       reads: ["us-representation/establishments"],
-      run: ({ country: countryCode = "CN", province, city, device, deviceClass, agent, noAgent, minScore, limit: max = 50 } = {}) => {
+      run: ({ country: countryCode = "CN", province, city, device, deviceClass, agent, noAgent, minScore, screening, limit: max = 50 } = {}) => {
         const has = (value, wanted) => !wanted || String(value ?? "").toLowerCase().includes(wanted.toLowerCase());
         const { snapshot, rows } = rowsOf(countryCode);
         const found = rows.filter((row) => has(row.province, province) && has(row.city, city)
@@ -163,20 +171,22 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
           && (!deviceClass || row.classes.includes(deviceClass))
           && (!agent || has(row.usAgent?.business ?? row.usAgent?.name, agent))
           && (!noAgent || !row.usAgent)
-          && (minScore === undefined || row.score >= minScore));
+          && (minScore === undefined || row.score >= minScore)
+          && (!screening || (row.screening?.reading ?? "clear") === screening));
         return Object.freeze({ pulledAt: snapshot.pulledAt, total: found.length, establishments: found.slice(0, max) });
       },
     }),
     operation({
       verb: "representation-call-queue",
       summary: "The next establishments to call or email: callbacks now due first, then the highest-scored not reached lately.",
-      description: "Clients who declined or asked to be removed drop out, and so do establishments already under an engagement past proposed.",
+      description: "Clients who declined or asked to be removed drop out, and so do establishments already under an engagement past proposed, and establishments whose name or owner is on the consolidated screening list (listed or blocked); possible matches stay in, flagged.",
       domain: queueSchema,
       reads: ["us-representation/establishments", "enterprise/records"],
       run: ({ country: countryCode = "CN", province, device, by, limit: max = 40, quietDays } = {}) => {
         const has = (value, wanted) => !wanted || String(value ?? "").toLowerCase().includes(wanted.toLowerCase());
         const stageOf = new Map(engagements().filter((e) => e.establishment).map((e) => [e.establishment, e.stage === "proposed" ? "interested" : e.stage]));
         const rows = rowsOf(countryCode).rows
+          .filter((row) => !["listed", "blocked"].includes(row.screening?.reading))
           .filter((row) => has(row.province, province) && (!device || row.devices.some((d) => has(d, device))))
           .map((row) => ({ ...row, party: row.name, stage: stageOf.get(row.key) ?? "lead" }));
         return callQueue(rows, groupBy(contacts().filter((c) => c.establishment), "establishment"), {

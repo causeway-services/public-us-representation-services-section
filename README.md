@@ -69,7 +69,11 @@ hold 741 of them.
    enough) with a bank account that can receive international wires.
 2. **The address and phone.** A US street address (not a PO box), a business
    phone answered in US business hours, and a mailbox someone reads every
-   day.
+   day. A home address qualifies: the device rule asks that the agent "reside
+   or maintain a place of business in the United States" (21 CFR 807.40(b)).
+   The agent's name, address, phone and email are published in the FDA's open
+   data, so a home address becomes public; a staffed office or a coworking
+   address with mail handling keeps it private.
 3. **A page to point to.** One web page saying who we are and what the
    service is, in English and Chinese, since makers check before they pay.
 4. **Reach makers in the renewal window.** Pull the establishments list,
@@ -82,6 +86,17 @@ hold 741 of them.
    against the signed service contract in about five to ten business days.
 7. **Do the job.** Answer the phone and mail, forward FDA messages the same
    day, remind clients of renewal next October.
+
+Devices only, to start: a foreign *food* facility's US agent is invoiced by
+the FDA for the facility's reinspection fees (FSMA section 107), so food
+clients need the fee clause and a prepayment before the Group takes them.
+
+**The fee** is a grey-band setting on the enterprise (`us-agent-annual-fee`,
+default $450, between $150 and $1,500). The market runs from about $250 a year
+at one-person agents to $800–1,500 at staffed firms; the offer (a named person,
+same-day forwarding in Chinese) sits above the bottom. The first emails can
+test it: half the batch at one price, half at another, and the setting moves
+to the one that signs more fee per email.
 
 Sales representation and local presence come after: they need a product
 line worth selling and time to build a buyer list. Trade shows are one

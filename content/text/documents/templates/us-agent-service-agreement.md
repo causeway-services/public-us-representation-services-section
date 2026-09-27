@@ -14,10 +14,9 @@ authors:
 **Between:** [the Group's contracting entity], a Minnesota business ("the Agent"), and
 {{client}}, FDA registration or FEI number {{establishment}} ("the Client").
 
-1. **Appointment.** The Client appoints the Agent as its United States agent for its
-   registration with the US Food and Drug Administration under 21 CFR 807.40 (medical devices)
-   or 21 CFR 1.227 (food facilities), as the Client names in its registration. The Agent
-   accepts.
+1. **Appointment.** The Client appoints the Agent as its United States agent for its medical
+   device establishment registration with the US Food and Drug Administration under 21 CFR
+   807.40, and names the Agent in that registration. The Agent accepts.
 2. **What the Agent does.** The Agent keeps a US street address and a telephone answered during
    US business hours; receives communications from the FDA for the Client; forwards each one to
    the Client the same US business day it is received, in English with a Chinese summary; helps
@@ -26,7 +25,8 @@ authors:
 3. **What the Agent does not do.** The Agent is not the Client's importer of record, customs
    broker, distributor or legal counsel; does not take title to the Client's goods; and makes
    no statement to the FDA about the Client's products beyond forwarding what the Client
-   provides.
+   provides. The Client alone answers for its products' safety, quality, labeling and
+   regulatory compliance.
 4. **What the Client does.** The Client names the Agent in its FDA registration, keeps its
    contact details current with the Agent, answers the Agent's forwarded FDA communications
    promptly, and tells the Agent of any change in its registration or products.
@@ -40,11 +40,18 @@ authors:
    government restricted-party list. The Agent screens the Client against the US consolidated
    screening list at signing and at renewal, and may end this agreement at once if the Client
    or an owner is listed.
-8. **Term and ending.** One year from signing, renewing for a further year on payment of the
+8. **Fees the FDA charges.** Any fee, charge or cost the FDA or another US agency assesses in
+   connection with the Client's establishment or products is the Client's, and the Client
+   repays the Agent within fifteen days if one is billed to the Agent.
+9. **Limit of liability.** The Agent's whole liability under or about this agreement is limited
+   to the fees the Client paid in the twelve months before the claim. Neither party is liable to
+   the other for lost profits or other indirect loss. The Client holds the Agent harmless from
+   claims arising from the Client's products or its dealings with the FDA.
+10. **Term and ending.** One year from signing, renewing for a further year on payment of the
    next year's fee. Either party may end the agreement on thirty days' written notice; the
    Client then names a new US agent in its registration, and the Agent tells the FDA it no
    longer acts for the Client once the notice period ends.
-9. **Law.** Minnesota law governs this agreement. The English text controls.
+11. **Law.** Minnesota law governs this agreement. The English text controls.
 
 **Agent:** ______________________ Date ________
 
