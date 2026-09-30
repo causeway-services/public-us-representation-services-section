@@ -25,7 +25,8 @@ const DAY_MS = 86_400_000;
 
 /** The US representation enterprise's id in the agency registry and the enterprise store. */
 export const REPRESENTATION_ENTERPRISE = "us-representation";
-const ENTERPRISE = enterpriseOf(JSON.parse(readFileSync(join(SECTION_ROOT, "lib", "agency", "enterprises", `${REPRESENTATION_ENTERPRISE}.json`), "utf8")));
+// Read the declared settings only when an operation needs them; discovery does no registry IO.
+const enterpriseForSettings = () => enterpriseOf(JSON.parse(readFileSync(join(SECTION_ROOT, "lib", "agency", "enterprises", `${REPRESENTATION_ENTERPRISE}.json`), "utf8")));
 
 /** What the Group does for a client. */
 export const OFFERS = Object.freeze(["us-agent", "sales-representation", "local-presence"]);
@@ -83,7 +84,7 @@ const activitySchema = object("activity", { since: text, by: text });
  * @param {{fetch?: typeof fetch}} [options]
  */
 export function usRepresentationOperations(binding, { fetch: fetchImpl, store = enterpriseStore(binding), now = () => Date.now(), contractingParty = () => undefined } = {}) {
-  const settings = () => settingValues(ENTERPRISE, store.read("setting", { enterprise: REPRESENTATION_ENTERPRISE }));
+  const settings = () => settingValues(enterpriseForSettings(), store.read("setting", { enterprise: REPRESENTATION_ENTERPRISE }));
   const engagements = () => currentOrders(store.read("order", { enterprise: REPRESENTATION_ENTERPRISE }));
   const engagementOf = (id) => engagements().find((e) => e.order === id);
   const contacts = () => store.read("contact", { enterprise: REPRESENTATION_ENTERPRISE });
