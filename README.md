@@ -104,7 +104,7 @@ place to meet makers and buyers, not a requirement to start.
 
 ## Working it
 
-People work the business in the metroplex at bare-cedar-fog.561.group, where their
+People work the business in the operations world at bare-cedar-fog.561.group, where their
 office grants the `representation-*` verbs as powers:
 
 ```
