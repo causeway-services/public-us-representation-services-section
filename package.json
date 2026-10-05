@@ -22,11 +22,11 @@
     "lib"
   ],
   "dependencies": {
-    "@red-cup-engineering/computer-system-engine": "0.1.0",
-    "@red-cup-engineering/consolidated-screening-list-services-section": "0.1.0",
-    "@red-cup-engineering/json-schema-services-section": "0.3.0",
-    "@red-cup-engineering/openfda-services-section": "0.1.0",
-    "@red-cup-engineering/organizing": "0.1.0"
+    "@red-cup-engineering/computer-system-engine": "workspace:*",
+    "@red-cup-engineering/consolidated-screening-list-services-section": "workspace:*",
+    "@red-cup-engineering/json-schema-services-section": "workspace:*",
+    "@red-cup-engineering/openfda-services-section": "workspace:*",
+    "@red-cup-engineering/organizing": "workspace:*"
   },
   "sideEffects": false
 }
