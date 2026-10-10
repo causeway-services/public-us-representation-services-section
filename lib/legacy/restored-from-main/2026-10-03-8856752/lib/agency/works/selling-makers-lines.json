@@ -1,0 +1,8 @@
+{
+  "id": "selling-makers-lines",
+  "name": "sell represented makers' lines to US buyers",
+  "from": "signed sales representative agreements and makers' product lines",
+  "to": "sales closed with US buyers and commissions recorded",
+  "cost": "representative time, samples, show days",
+  "otherwise": "makers' lines have no one selling them in the US"
+}
