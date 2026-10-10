@@ -1,0 +1,8 @@
+{
+  "id": "holding-fda-us-agent-roles",
+  "name": "hold clients' FDA US agent roles",
+  "from": "signed US agent agreements",
+  "to": "the Group named as US agent in each client's FDA registration, every FDA communication forwarded the same day, renewals kept",
+  "cost": "a staffed US phone and address, FDA account time",
+  "otherwise": "clients are unreachable to the FDA and their registrations lapse"
+}
