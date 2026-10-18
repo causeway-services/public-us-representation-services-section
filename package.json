@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "type": "module",
   "description": "US representation for foreign, mostly Chinese, companies: holding their FDA US agent roles, selling their lines to US buyers on commission, and standing for them at shows and on the phone; leads from the FDA's public registration data, counterparties screened against the US consolidated screening list.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/causeway-services/public-services-section.git",
+    "directory": "services/public-economic-services-section/services/us-representation-services-section"
+  },
   "engines": {
     "node": ">=22.18"
   },
