@@ -18,7 +18,7 @@ export const FDA_FOOD_2026 = Object.freeze({
   officialQuestions: "https://www.fda.gov/animal-veterinary/animal-foods-feeds/animal-food-facility-registration-and-qualified-facility-attestation-frequently-asked-questions"
 });
 
-const allowed = Object.freeze({
+export const FDA_FOOD_INPUT_CHOICES = Object.freeze({
   facilityLocation: ["domestic", "foreign"],
   registrationRequired: ["yes", "no", "unknown"],
   registeredBeforeOctober: ["yes", "no", "unknown"],
@@ -28,7 +28,7 @@ const allowed = Object.freeze({
   authorizedSubmitter: ["owner-operator", "authorized-individual", "unknown"],
   foreignUsAgentCurrent: ["yes", "no", "unknown"]
 });
-const REQUIRED = Object.freeze([
+export const FDA_FOOD_INPUT_REQUIRED = Object.freeze([
   "facilityLocation", "registrationRequired", "registeredBeforeOctober",
   "ownershipChanged", "ufiAvailable", "qualifiedFacilityAttestation",
   "authorizedSubmitter"
@@ -56,9 +56,9 @@ const included = (steps, id, english, chinese, url = FDA_FOOD_2026.renewalGuide)
 export function prepare2026FoodFacilityRenewal(input, { asOf = new Date().toISOString().slice(0, 10) } = {}) {
   if (!input || typeof input !== "object" || Array.isArray(input) ||
       !validDay(asOf) ||
-      Object.keys(input).some(key => !Object.hasOwn(allowed, key)) ||
-      REQUIRED.some(key => !Object.hasOwn(input, key)) ||
-      Object.entries(input).some(([key,value]) => !allowed[key].includes(value)) ||
+      Object.keys(input).some(key => !Object.hasOwn(FDA_FOOD_INPUT_CHOICES, key)) ||
+      FDA_FOOD_INPUT_REQUIRED.some(key => !Object.hasOwn(input, key)) ||
+      Object.entries(input).some(([key,value]) => !FDA_FOOD_INPUT_CHOICES[key].includes(value)) ||
       (input.facilityLocation === "foreign" && !literal(input.foreignUsAgentCurrent)) ||
       (input.facilityLocation === "domestic" && input.foreignUsAgentCurrent !== undefined)) {
     throw new TypeError("food renewal preparation needs exact client-declared FDA program coordinates and a valid observation date");
