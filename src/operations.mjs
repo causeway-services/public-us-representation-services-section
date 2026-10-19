@@ -16,6 +16,7 @@ import { DEVICE_REGISTRATION_LISTING, openfdaAll } from "@red-cup-engineering/op
 import { fetchConsolidatedList } from "@red-cup-engineering/consolidated-screening-list-services-section/client";
 import { screenName, screeningIndex } from "@red-cup-engineering/consolidated-screening-list-services-section/screen";
 import { agentMarket, clientKey, establishmentsFrom, leadRows } from "./leads.mjs";
+import { FDA_FOOD_INPUT_CHOICES, FDA_FOOD_INPUT_REQUIRED, prepare2026FoodFacilityRenewal } from "./food-renewal-preparation.mjs";
 
 const SECTION_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const TEMPLATES = join(SECTION_ROOT, "content", "text", "documents", "templates");
@@ -83,6 +84,15 @@ const engagementSchema = object("engagement", {
 const engagementsSchema = object("engagements", { stage: text, offer: { enum: OFFERS }, client: text });
 const paymentSchema = object("payment", { engagement: text, received: number, date: text, saleAmount: number, notes: text }, ["engagement", "received"]);
 const documentSchema = object("document", { template: { enum: TEMPLATE_NAMES }, engagement: text, values: { type: "object" } }, ["template"]);
+const foodRenewalBriefSchema = object("food-renewal-brief",
+  Object.fromEntries(Object.entries(FDA_FOOD_INPUT_CHOICES).map(([key,choices]) => [key, { enum: choices }])),
+  [...FDA_FOOD_INPUT_REQUIRED]);
+const ENGAGEMENT_DOCUMENTS = Object.freeze({
+  "us-agent": "us-agent-service-agreement",
+  "sales-representation": "sales-representative-agreement",
+  "local-presence": "local-presence-order",
+  "food-renewal-preparation": "food-renewal-preparation-agreement"
+});
 const activitySchema = object("activity", { since: text, by: text });
 
 /**
@@ -358,12 +368,39 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
       },
     }),
     operation({
+      verb: "representation-food-renewal-brief",
+      summary: "Produce a bilingual customer-usable 2026 FDA food-facility renewal preparation brief without submitting a filing or representing FDA.",
+      description: "The actual client declarations determine renewal, ownership, unique facility identifier, agent and qualified-facility-attestation questions. The result is source-linked customer material, not a regulator submission, approval, appointment or invented paid engagement.",
+      domain: foodRenewalBriefSchema,
+      reads: ["fda/2026-food-facility-renewal-guidance"],
+      run: (input) => prepare2026FoodFacilityRenewal(input, {
+        asOf: new Date(now()).toISOString().slice(0, 10)
+      }),
+    }),
+    operation({
       verb: "representation-document-draft",
       summary: "Draft the US agent service agreement, the sales representative agreement, the local presence order or the caller's joint-venture agreement with an engagement's values filled in.",
       domain: documentSchema,
       reads: ["enterprise/records"],
       run: ({ template, engagement: id, values = {} }) => {
         const engagement = id ? engagementOf(id) : undefined;
+        if (id && !engagement) throw new TypeError("document draft names an existing original engagement");
+        if (engagement && template !== ENGAGEMENT_DOCUMENTS[engagement.offer] &&
+            template !== "joint-venture-caller-agreement") {
+          throw new TypeError("customer agreement must match the actual client's service, not another FDA program or sales product");
+        }
+        if (template === "food-renewal-preparation-agreement" &&
+            engagement?.offer !== "food-renewal-preparation") {
+          throw new TypeError("FDA food renewal preparation agreement requires a scoped original proposed client engagement");
+        }
+        // The caller cannot overwrite contractual identity, fee or scope in
+        // a prepared original engagement by injecting template values.
+        const protectedFields = ["client", "establishment", "country", "offer",
+          "annualFee", "preparationFee", "commercialScope", "fdaProgram", "contractingParty"];
+        if (Object.hasOwn(values,"contractingParty") ||
+            (engagement && protectedFields.some(key => Object.hasOwn(values,key)))) {
+          throw new TypeError("document values cannot rewrite the original signed party, service, fees or scope");
+        }
         const current = settings();
         const merged = {
           date: new Date(now()).toISOString().slice(0, 10), contractingParty: contractingParty(REPRESENTATION_ENTERPRISE), annualFee: current["us-agent-annual-fee"], commissionPercent: Math.round(current["sales-commission"] * 1000) / 10,
