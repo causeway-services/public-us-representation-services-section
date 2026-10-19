@@ -28,16 +28,16 @@ export const REPRESENTATION_ENTERPRISE = "us-representation";
 // Read the declared settings only when an operation needs them; discovery does no registry IO.
 const enterpriseForSettings = () => enterpriseOf(JSON.parse(readFileSync(join(SECTION_ROOT, "lib", "agency", "enterprises", `${REPRESENTATION_ENTERPRISE}.json`), "utf8")));
 
-/** What the Group does for a client. */
-export const OFFERS = Object.freeze(["us-agent", "sales-representation", "local-presence"]);
+/** Mutually distinct client services; no food assistance appoints a US Agent. */
+export const OFFERS = Object.freeze(["us-agent", "sales-representation", "local-presence", "food-renewal-preparation"]);
 
 /** An engagement's procedure: proposed, signed, active (the role held or the line selling), renewed. */
 export const REPRESENTATION_PROCEDURE = procedure([
   { stage: "proposed", means: "an agreement sent to the client", office: "us-representation-caller", deadReasons: ["declined", "no answer", "price", "chose another agent", "screening"] },
   { stage: "signed", means: "the agreement signed by both, the client screened", office: "us-agent-of-record", deadReasons: ["unpaid", "screening", "withdrew"] },
-  { stage: "active", means: "named as US agent in the FDA's system, or the line on sale, or the first presence day worked", office: "us-agent-of-record", deadReasons: ["ended by client", "ended by the Group", "client left the US market"] },
+  { stage: "active", means: "FDA-designated and consented US agent, actual represented line/presence delivery, or client-authorized preparation work", office: "us-agent-of-record", deadReasons: ["ended by client", "ended by the Group", "client left the US market"] },
   { stage: "renewed", means: "a further year or term agreed and paid; may recur in subsequent years", office: "us-agent-of-record", deadReasons: ["ended by client", "ended by the Group"] },
-  { stage: "closed", means: "the final agreed term was completed and the client released from this service", office: "us-agent-of-record", deadReasons: [] },
+  { stage: "closed", means: "the agreed work was delivered and accepted, or the agent formally released", office: "us-agent-of-record", mayFollow: ["active", "renewed"], deadReasons: [] },
 ]);
 const CONTACT_OUTCOMES = contactOutcomes(["no answer", "voicemail", "letter sent", "not the right contact", "callback", "interested", "engagement sent", "not interested", "remove"]);
 const FOR = new Set(Object.entries(CONTACT_OUTCOMES).filter(([, side]) => side === "for").map(([name]) => name));
@@ -76,6 +76,9 @@ const engagementSchema = object("engagement", {
   commercialScope: text, termEnds: text, deadReason: text, notes: text,
   signedAgreementRef: text, designationRef: text, agentConsentRef: text,
   renewalAgreementRef: text, renewalPaymentRef: text, releaseRef: text,
+  fdaProgram: { enum: ["food-facility-registration-biennial-renewal"] },
+  preparationFee: { type: "number", minimum: 0 },
+  customerAuthorizationRef: text, deliveryAcceptanceRef: text,
 }, ["client", "offer", "stage"]);
 const engagementsSchema = object("engagements", { stage: text, offer: { enum: OFFERS }, client: text });
 const paymentSchema = object("payment", { engagement: text, received: number, date: text, saleAmount: number, notes: text }, ["engagement", "received"]);
@@ -243,6 +246,10 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
         validateOrderTransition(engagementOf(id)?.history ?? [], { ...input, order: id },
           REPRESENTATION_PROCEDURE, { partyKey: "client", requireInitialStage: true });
         const sourceRef = (value) => typeof value === "string" && value.trim().length > 0;
+        if (input.offer === "food-renewal-preparation" &&
+            (input.fdaProgram ?? engagementOf(id)?.fdaProgram) !== "food-facility-registration-biennial-renewal") {
+          throw new TypeError("food renewal preparation must name its actual FDA food-facility program");
+        }
         if (input.stage === "signed") {
           if (!sourceRef(input.commercialScope) || !sourceRef(input.signedAgreementRef) ||
               !sourceRef(input.country)) {
@@ -251,7 +258,17 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
           // The agreement names an actual available person/entity, not an
           // inferred business alias or an office description.
           const principal = contractingParty(REPRESENTATION_ENTERPRISE);
-          if (!sourceRef(principal)) throw new TypeError("cannot sign without an actual contracting principal");
+          if (!sourceRef(principal) || principal.includes("(not yet formed)")) {
+            throw new TypeError("cannot sign without an actually formed contracting principal");
+          }
+          if (input.offer === "food-renewal-preparation" &&
+              (!Number.isFinite(input.preparationFee) || input.preparationFee < 0)) {
+            throw new TypeError("food renewal preparation requires an agreed finite quoted service fee, distinct from the FDA zero-dollar filing fee");
+          }
+        }
+        if (input.offer === "food-renewal-preparation" && input.stage === "active" &&
+            !sourceRef(input.customerAuthorizationRef)) {
+          throw new TypeError("food renewal preparation requires documented client authorization before handling client registration information");
         }
         if (input.offer === "us-agent" && input.stage === "active" &&
             (!sourceRef(input.designationRef) || !sourceRef(input.agentConsentRef))) {
@@ -261,20 +278,27 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
             (!sourceRef(input.renewalAgreementRef) || !sourceRef(input.renewalPaymentRef))) {
           throw new TypeError("FDA agent renewal requires a renewed agreement and actual original payment reference");
         }
-        if (input.stage === "closed" && !sourceRef(input.releaseRef)) {
-          throw new TypeError("closing a representation requires the actual release/fulfillment reference");
+        if (input.stage === "closed") {
+          if (input.offer === "food-renewal-preparation" && !sourceRef(input.deliveryAcceptanceRef)) {
+            throw new TypeError("food renewal assistance closes only on actual client-accepted delivered work");
+          }
+          if (input.offer !== "food-renewal-preparation" && !sourceRef(input.releaseRef)) {
+            throw new TypeError("closing a representation requires the actual release/fulfillment reference");
+          }
         }
         if (input.stage === "dead" && !input.deadReason) throw new Error(`a dead engagement names its reason: ${REPRESENTATION_PROCEDURE.deadReasons.join(", ")}`);
         const current = settings();
         const terms = input.offer === "us-agent" ? { annualFee: input.annualFee ?? engagementOf(id)?.annualFee ?? current["us-agent-annual-fee"] }
           : input.offer === "sales-representation" ? { commissionRate: input.commissionRate ?? engagementOf(id)?.commissionRate ?? current["sales-commission"] }
+          : input.offer === "food-renewal-preparation" ? { preparationFee: input.preparationFee ?? engagementOf(id)?.preparationFee ?? null }
           : { dayRate: input.dayRate ?? engagementOf(id)?.dayRate ?? current["local-presence-day-rate"] };
         let screening;
         if (input.stage === "signed") {
           screening = await screen(input.client, input.owners ?? [], input.country ?? "CN");
           if (screening.reading !== "clear") throw new Error(`cannot sign ${input.client} with unresolved restricted-party screening (${screening.reading}); resolve the actual list and person before executing a contract`);
         }
-        const fee = input.offer === "us-agent" ? terms.annualFee : null;
+        const fee = input.offer === "us-agent" ? terms.annualFee
+          : input.offer === "food-renewal-preparation" ? terms.preparationFee : null;
         return store.order({
           ...input, ...terms, enterprise: REPRESENTATION_ENTERPRISE, order: id, fee,
           ...(screening ? { screening: { reading: screening.reading, listPulledAt: screening.listPulledAt, matches: screening.parties.flatMap((p) => p.matches.slice(0, 3)) } } : {}),
