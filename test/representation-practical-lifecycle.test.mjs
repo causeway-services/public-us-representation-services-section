@@ -82,7 +82,7 @@ test("one real buyer can propose distinct preparation for two separate factories
     });
     assert.match(document.markdown,/Fixture International Foods/u);
     assert.match(document.markdown,/FDA government registration\/renewal fee: US\$ 0/u);
-    await assert.rejects(()=>f.doOperation("representation-document-draft",{
+    await assert.rejects(async()=>f.doOperation("representation-document-draft",{
       template:"us-agent-service-agreement",engagement:first.order
     }),/must match/u);
   } finally {f.cleanup();}
@@ -92,17 +92,17 @@ test("a client can't skip signed or authorized work, fake an annual food-agent r
   const f=fixture();
   try {
     const one=await f.doOperation("representation-engagement-record",facility("CN-Plant-1"));
-    await assert.rejects(()=>f.doOperation("representation-engagement-record",{
+    await assert.rejects(async()=>f.doOperation("representation-engagement-record",{
       ...base,establishment:"CN-Plant-1",stage:"active",
       customerAuthorizationRef:"fixture:customer-says-so"
     }),/cannot skip/u);
-    await assert.rejects(()=>f.doOperation("representation-engagement-record",{
+    await assert.rejects(async()=>f.doOperation("representation-engagement-record",{
       ...base,establishment:"CN-Plant-1",stage:"renewed"
     }),/unknown order stage/u);
-    await assert.rejects(()=>f.doOperation("representation-engagement-record",{
+    await assert.rejects(async()=>f.doOperation("representation-engagement-record",{
       ...base,establishment:"",stage:"proposed"
     }),/distinct client-sourced facility/u);
-    await assert.rejects(()=>f.doOperation("representation-document-draft",{
+    await assert.rejects(async()=>f.doOperation("representation-document-draft",{
       template:"food-renewal-preparation-agreement",engagement:one.order,
       values:{client:"Different Buyer"}
     }),/cannot rewrite/u);
