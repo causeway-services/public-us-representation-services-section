@@ -1,17 +1,26 @@
 # US Representation Services Section
 
-The 561 Group's US representation business. Chinese companies selling into
-the United States need people here: someone the FDA can reach, someone who
-sells their products to American buyers, someone who stands in their booth
-and answers their phone in US hours. We are those people, for a fee or a
-commission.
+The 561 Group's **source-owned prospective U.S. representation and independent
+preparation service**. Foreign companies entering the United States need
+reliable U.S.-side representation, market help and preparation for external
+institutional processes. A code repository does **not** establish a staffed
+representative, legally formed signatory, client appointment, running host,
+completed service or customer payment.
 
-Three offers, sold by the same callers to the same makers:
+Four different potential services operate through this one enterprise:
 
-- **US agent.** Every foreign medical device establishment and food facility
-  registered with the FDA must name a US agent. We hold the role for a yearly
-  fee: a named person in Minnesota who answers the FDA and forwards every
-  message the same day in English and Chinese.
+- **Medical-device U.S. Agent.** For foreign device establishments that
+  require a U.S. agent, the service requires a real physically available
+  U.S. person/place of business, client appointment, the agent's own FDA
+  confirmation, ongoing communication capacity and a signed contract.
+  This is a proposed **device-only** annual service; those conditions have
+  not been observed to hold for an active 561 client.
+- **Food-facility renewal preparation (independent optional assistance).**
+  Prepare a bilingual FDA-source-linked 2026 renewal brief and, only when
+  actually contracted, additional client document review. **FDA itself
+  charges $0 for food facility registration/renewal, and independent
+  preparation is never mandatory.** This is not a food-facility U.S.-agent
+  appointment or FDA filing.
 - **Sales representation.** We sell a maker's line to US distributors,
   clinics, retailers and manufacturers for a commission on what sells, under a
   sales representative agreement that meets Minnesota's statute.
@@ -38,16 +47,19 @@ Why, and the law it runs under:
   `representation-screen`, `representation-contact-log`,
   `representation-engagement-record` (signing screens the client and its
   owners), `representation-engagements`, `representation-payment-record`
-  (settles the originating caller's share), `representation-activity`,
-  `representation-document-draft`.
+  (records asserted settlements separately from bank confirmation),
+  `representation-food-renewal-brief`, `representation-activity`,
+  `representation-document-draft`. The original Organizing engine
+  distinguishes one-off preparation closure from annual agent renewal.
 - `lib/agency/`: the enterprise (a market micro-enterprise with grey-band
   settings for the agent fee, commission, day rate and caller share), its
   leading goal and its maker-representation chain-group contract, three
   offices (US representation caller, US agent of record, sales
   representative), their duties, works and skills, and a rule that a signed
   engagement states its commercial scope.
-- `content/text/documents/templates/`: the US agent service agreement, the
-  sales representative agreement, the local presence order and the caller's
+- `content/text/documents/templates/`: the device-only U.S. agent agreement,
+  the separately scoped food-renewal-preparation agreement, the sales
+  representative agreement, the local presence order and the caller's
   joint-venture agreement.
 - `content/text/documents/articles/guides/caller-kit.md`: when to call China,
   the first email in English and Chinese, the call, and what makers ask.
@@ -87,9 +99,12 @@ hold 741 of them.
 7. **Do the job.** Answer the phone and mail, forward FDA messages the same
    day, remind clients of renewal next October.
 
-Devices only, to start: a foreign *food* facility's US agent is invoiced by
-the FDA for the facility's reinspection fees (FSMA section 107), so food
-clients need the fee clause and a prepayment before the Group takes them.
+**Ongoing U.S.-agent appointments are device-only in this implementation.**
+The distinct food-renewal-preparation offer does not take appointment, U.S.
+presence or reinspection-fee liabilities. A foreign food-facility's legally
+appointed U.S. agent has different responsibilities and may receive FDA
+reinspection invoices; a separate qualified legal/operational agreement
+would be required for that service. <https://www.fda.gov/food/inspections-protect-food-supply/foreign-food-facility-inspection-program-questions-answers>
 
 **The fee** is a grey-band setting on the enterprise (`us-agent-annual-fee`,
 default $450, between $150 and $1,500). The market runs from about $250 a year
@@ -116,3 +131,53 @@ representation-screen name="Ningbo Example Medical Co., Ltd."
 representation-engagement-record client="Ningbo Example Medical Co., Ltd." establishment=3005951403 offer=us-agent stage=proposed
 representation-document-draft template=us-agent-service-agreement engagement=ningbo-example-medical-co-ltd-us-agent
 ```
+
+## 2026 FDA food-facility renewal — original practical capability
+
+[Preparing FDA food facility renewals](lib/agency/skills/preparing-fda-food-facility-renewals/SKILL.md)
+is a **Practical Skill** of the existing US Representation Caller office,
+not a new U.S.-agent incumbency. Its source-owned producer
+[`src/food-renewal-preparation.mjs`](src/food-renewal-preparation.mjs)
+creates English/Chinese, FDA-linked client briefs. The original
+`usRepresentationOperations` exports `representation-food-renewal-brief`;
+the separate [optional service agreement](content/text/documents/templates/food-renewal-preparation-agreement.md)
+can be drafted for an actual proposed `food-renewal-preparation` engagement.
+
+FDA's [September 29, 2026 announcement](https://www.fda.gov/food/hfp-constituent-updates/fda-reminds-food-facilities-biennial-renewal-requirements)
+and [official user guide](https://www.fda.gov/food/online-registration-food-facilities/food-facility-registration-user-guide-biennial-registration-renewal)
+put the current renewal period at **October 1–December 31, 2026**.
+Facility coverage, exemption, ownership changes, UFI, qualified-facility
+attestation and submission authority must be considered case-by-case.
+
+**Read-only preparation without accounts or credentials:**
+
+```sh
+node --input-type=module -e '
+import {prepare2026FoodFacilityRenewal} from "./src/food-renewal-preparation.mjs";
+console.log(prepare2026FoodFacilityRenewal({
+  facilityLocation:"domestic",registrationRequired:"unknown",
+  registeredBeforeOctober:"unknown",ownershipChanged:"unknown",
+  ufiAvailable:"unknown",qualifiedFacilityAttestation:"unknown",
+  authorizedSubmitter:"unknown"
+}, {asOf:"2026-10-19"}).markdown);
+'
+```
+
+The original customer process is **proposed → signed → active → closed**
+with an actual optional fee and separately accepted delivery, not an
+annual representation renewal. The client or explicitly authorized submitter
+performs any official FDA account submission.
+
+```sh
+npm test
+npm run check
+```
+
+**Installation and receiving status (October 19, 2026):**
+the 2026 bilingual producer, source tests, optional-service template and
+actual operation selection are committed. The installed MetroPlat host
+returned *Unknown command* when asked to execute
+`representation-food-renewal-brief`; therefore no deployed service,
+official filing, FDA representative appointment, third-party permission,
+client acceptance or earned payment is claimed. Native full dependency
+closure and installed source receiving remain distinct.
