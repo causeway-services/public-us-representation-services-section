@@ -1,0 +1,20 @@
+{
+  "id": "preparing-fda-food-facility-renewals",
+  "name": "prepare optional FDA food-facility renewal materials for an identified customer",
+  "authority": "emsenn",
+  "work": "preparing-fda-food-facility-renewals",
+  "from": "a food-facility customer's specific registration and authorization circumstances and current FDA 2026 renewal guidance",
+  "to": "a usable source-linked bilingual preparation brief, and where authorized a separately signed private preparation service and customer-accepted delivery",
+  "cost": "source qualification, professional administrative preparation, client review and explicitly agreed private service effort",
+  "otherwise": "the customer lacks requested independent preparation help, but remains free to renew directly at FDA without paying a registrar",
+  "claim": "leader",
+  "delegation": true,
+  "skills": [
+    "preparing-fda-food-facility-renewals"
+  ],
+  "x-provenance": {
+    "recorded-on": "2026-10-19",
+    "source": "https://github.com/561-group/561-group-opportunity-services-section/issues/1",
+    "scope": "optional private administrative preparation, never implied FDA agency"
+  }
+}
