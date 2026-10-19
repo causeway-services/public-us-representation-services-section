@@ -34,12 +34,25 @@ export const OFFERS = Object.freeze(["us-agent", "sales-representation", "local-
 
 /** An engagement's procedure: proposed, signed, active (the role held or the line selling), renewed. */
 export const REPRESENTATION_PROCEDURE = procedure([
-  { stage: "proposed", means: "an agreement sent to the client", office: "us-representation-caller", deadReasons: ["declined", "no answer", "price", "chose another agent", "screening"] },
-  { stage: "signed", means: "the agreement signed by both, the client screened", office: "us-agent-of-record", deadReasons: ["unpaid", "screening", "withdrew"] },
-  { stage: "active", means: "FDA-designated and consented US agent, actual represented line/presence delivery, or client-authorized preparation work", office: "us-agent-of-record", deadReasons: ["ended by client", "ended by the Group", "client left the US market"] },
-  { stage: "renewed", means: "a further year or term agreed and paid; may recur in subsequent years", office: "us-agent-of-record", deadReasons: ["ended by client", "ended by the Group"] },
-  { stage: "closed", means: "the agreed work was delivered and accepted, or the agent formally released", office: "us-agent-of-record", mayFollow: ["active", "renewed"], deadReasons: [] },
+  { stage: "proposed", means: "an engagement proposed to the client", office: "us-representation-caller", deadReasons: ["declined", "no answer", "price", "chose another agent", "screening"] },
+  { stage: "signed", means: "client and lawful service provider signed; screening completed", office: "us-agent-of-record", deadReasons: ["unpaid", "screening", "withdrew"] },
+  { stage: "active", means: "original FDA device-agent designation and agent consent, or actual sales/presence service", office: "us-agent-of-record", deadReasons: ["ended by client", "ended by the Group", "client left the US market"] },
+  { stage: "renewed", means: "a further representation term agreed and paid", office: "us-agent-of-record", deadReasons: ["ended by client", "ended by the Group"] },
+  { stage: "closed", means: "the original role released or contracted representation fully completed", office: "us-agent-of-record", mayFollow: ["active", "renewed"], deadReasons: [] },
 ]);
+
+/** A one-off 2026 food-renewal preparation job is not an annually held
+ * U.S.-agent incumbency and cannot be reported as a renewed agency role.
+ * Retain its stages in the existing enterprise journal and native CRM.
+ */
+export const FOOD_PREPARATION_PROCEDURE = procedure([
+  { stage: "proposed", means: "optional independent preparation scope and fee offered", office: "us-representation-caller", deadReasons: ["declined", "no answer", "price", "screening"] },
+  { stage: "signed", means: "client and actual service provider signed the preparation-only agreement", office: "us-representation-caller", deadReasons: ["unpaid", "screening", "withdrew"] },
+  { stage: "active", means: "client authorized processing and received the work in progress", office: "us-representation-caller", deadReasons: ["ended by client", "ended by the Group"] },
+  { stage: "closed", means: "client accepted the scoped preparation deliverable; NOT an FDA filing or U.S.-agent appointment", office: "us-representation-caller", deadReasons: [] },
+]);
+const procedureForOffer = offer => offer === "food-renewal-preparation"
+  ? FOOD_PREPARATION_PROCEDURE : REPRESENTATION_PROCEDURE;
 const CONTACT_OUTCOMES = contactOutcomes(["no answer", "voicemail", "letter sent", "not the right contact", "callback", "interested", "engagement sent", "not interested", "remove"]);
 const FOR = new Set(Object.entries(CONTACT_OUTCOMES).filter(([, side]) => side === "for").map(([name]) => name));
 
@@ -254,7 +267,7 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
         // Enterprise records are append-only; that does NOT itself enforce
         // the original customer engagement's permitted lifecycle.
         validateOrderTransition(engagementOf(id)?.history ?? [], { ...input, order: id },
-          REPRESENTATION_PROCEDURE, { partyKey: "client", requireInitialStage: true });
+          procedureForOffer(input.offer), { partyKey: "client", requireInitialStage: true });
         const sourceRef = (value) => typeof value === "string" && value.trim().length > 0;
         if (input.offer === "food-renewal-preparation" &&
             (input.fdaProgram ?? engagementOf(id)?.fdaProgram) !== "food-facility-registration-biennial-renewal") {
@@ -328,8 +341,10 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
         return Object.freeze({
           byStage: Object.fromEntries(REPRESENTATION_PROCEDURE.names.map((s) => [s, all.filter((e) => e.stage === s).length])),
           contractedAgentAnnualServiceFeesNotReceivedIncome: live.filter((e) => e.offer === "us-agent").reduce((sum, e) => sum + (e.annualFee ?? 0), 0),
-          funnel: funnel(all.map((e) => e.history), REPRESENTATION_PROCEDURE),
+          funnel: funnel(all.filter(e => e.offer !== "food-renewal-preparation").map(e => e.history), REPRESENTATION_PROCEDURE),
           procedure: REPRESENTATION_PROCEDURE.stages,
+          preparationFunnel: funnel(all.filter(e => e.offer === "food-renewal-preparation").map(e => e.history), FOOD_PREPARATION_PROCEDURE),
+          preparationProcedure: FOOD_PREPARATION_PROCEDURE.stages,
           settlements: store.read("settlement", { enterprise: REPRESENTATION_ENTERPRISE }),
           engagements: shown.map(({ history, ...e }) => ({ ...e, stages: history.length })),
         });
