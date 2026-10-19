@@ -263,7 +263,18 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
       writes: ["enterprise/records"],
       effects: { class: "external", replay: "safe", coordination: "coordination-free", deterministic: "unmeasured", totality: "unmeasured" },
       run: async (input, _args, context) => {
-        const id = `${clientKey(input.client)}-${input.offer}`;
+        // Food-renewal preparation is a facility-scoped, 2026-only unit of
+        // work. A buyer can have several eligible facilities; a client-name
+        // slug alone would silently collapse distinct customer deliverables.
+        const clientId = clientKey(input.client);
+        const foodPreparation = input.offer === "food-renewal-preparation";
+        const facilityId = foodPreparation ? clientKey(input.establishment) : null;
+        if (!clientId || (foodPreparation && !facilityId)) {
+          throw new TypeError("food preparation requires a named client and a distinct client-sourced facility reference");
+        }
+        const id = foodPreparation
+          ? `${clientId}-${facilityId}-food-renewal-preparation-2026`
+          : `${clientId}-${input.offer}`;
         // Enterprise records are append-only; that does NOT itself enforce
         // the original customer engagement's permitted lifecycle.
         validateOrderTransition(engagementOf(id)?.history ?? [], { ...input, order: id },
