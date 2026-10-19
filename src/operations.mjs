@@ -11,7 +11,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { operation } from "@red-cup-engineering/computer-system-engine/rpc/operation";
 import { schemaFrom } from "@red-cup-engineering/json-schema-services-section/contracts";
-import { callQueue, contactActivity, contactOutcomes, currentOrders, enterpriseOf, enterpriseStore, fillTemplate, funnel, groupBy, procedure, settingValues } from "@red-cup-engineering/organizing/enterprise";
+import { callQueue, contactActivity, contactOutcomes, currentOrders, enterpriseOf, enterpriseStore, fillTemplate, funnel, groupBy, procedure, settingValues, validateOrderTransition } from "@red-cup-engineering/organizing/enterprise";
 import { DEVICE_REGISTRATION_LISTING, openfdaAll } from "@red-cup-engineering/openfda-services-section/client";
 import { fetchConsolidatedList } from "@red-cup-engineering/consolidated-screening-list-services-section/client";
 import { screenName, screeningIndex } from "@red-cup-engineering/consolidated-screening-list-services-section/screen";
@@ -36,7 +36,8 @@ export const REPRESENTATION_PROCEDURE = procedure([
   { stage: "proposed", means: "an agreement sent to the client", office: "us-representation-caller", deadReasons: ["declined", "no answer", "price", "chose another agent", "screening"] },
   { stage: "signed", means: "the agreement signed by both, the client screened", office: "us-agent-of-record", deadReasons: ["unpaid", "screening", "withdrew"] },
   { stage: "active", means: "named as US agent in the FDA's system, or the line on sale, or the first presence day worked", office: "us-agent-of-record", deadReasons: ["ended by client", "ended by the Group", "client left the US market"] },
-  { stage: "renewed", means: "a further year or term agreed and paid", office: "us-agent-of-record", deadReasons: ["ended by client", "ended by the Group"] },
+  { stage: "renewed", means: "a further year or term agreed and paid; may recur in subsequent years", office: "us-agent-of-record", deadReasons: ["ended by client", "ended by the Group"] },
+  { stage: "closed", means: "the final agreed term was completed and the client released from this service", office: "us-agent-of-record", deadReasons: [] },
 ]);
 const CONTACT_OUTCOMES = contactOutcomes(["no answer", "voicemail", "letter sent", "not the right contact", "callback", "interested", "engagement sent", "not interested", "remove"]);
 const FOR = new Set(Object.entries(CONTACT_OUTCOMES).filter(([, side]) => side === "for").map(([name]) => name));
@@ -73,6 +74,8 @@ const engagementSchema = object("engagement", {
   client: text, establishment: text, country, offer: { enum: OFFERS }, stage: { enum: REPRESENTATION_PROCEDURE.names },
   owners: texts, annualFee: number, commissionRate: number, dayRate: number, territory: text, products: text,
   commercialScope: text, termEnds: text, deadReason: text, notes: text,
+  signedAgreementRef: text, designationRef: text, agentConsentRef: text,
+  renewalAgreementRef: text, renewalPaymentRef: text, releaseRef: text,
 }, ["client", "offer", "stage"]);
 const engagementsSchema = object("engagements", { stage: text, offer: { enum: OFFERS }, client: text });
 const paymentSchema = object("payment", { engagement: text, received: number, date: text, saleAmount: number, notes: text }, ["engagement", "received"]);
@@ -235,6 +238,32 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
       effects: { class: "external", replay: "safe", coordination: "coordination-free", deterministic: "unmeasured", totality: "unmeasured" },
       run: async (input, _args, context) => {
         const id = `${clientKey(input.client)}-${input.offer}`;
+        // Enterprise records are append-only; that does NOT itself enforce
+        // the original customer engagement's permitted lifecycle.
+        validateOrderTransition(engagementOf(id)?.history ?? [], { ...input, order: id },
+          REPRESENTATION_PROCEDURE, { partyKey: "client", requireInitialStage: true });
+        const sourceRef = (value) => typeof value === "string" && value.trim().length > 0;
+        if (input.stage === "signed") {
+          if (!sourceRef(input.commercialScope) || !sourceRef(input.signedAgreementRef) ||
+              !sourceRef(input.country)) {
+            throw new TypeError("signing requires real commercial scope, original signed agreement, and client country");
+          }
+          // The agreement names an actual available person/entity, not an
+          // inferred business alias or an office description.
+          const principal = contractingParty(REPRESENTATION_ENTERPRISE);
+          if (!sourceRef(principal)) throw new TypeError("cannot sign without an actual contracting principal");
+        }
+        if (input.offer === "us-agent" && input.stage === "active" &&
+            (!sourceRef(input.designationRef) || !sourceRef(input.agentConsentRef))) {
+          throw new TypeError("FDA device agent activation requires the original designation and the agent's own consent confirmation");
+        }
+        if (input.offer === "us-agent" && input.stage === "renewed" &&
+            (!sourceRef(input.renewalAgreementRef) || !sourceRef(input.renewalPaymentRef))) {
+          throw new TypeError("FDA agent renewal requires a renewed agreement and actual original payment reference");
+        }
+        if (input.stage === "closed" && !sourceRef(input.releaseRef)) {
+          throw new TypeError("closing a representation requires the actual release/fulfillment reference");
+        }
         if (input.stage === "dead" && !input.deadReason) throw new Error(`a dead engagement names its reason: ${REPRESENTATION_PROCEDURE.deadReasons.join(", ")}`);
         const current = settings();
         const terms = input.offer === "us-agent" ? { annualFee: input.annualFee ?? engagementOf(id)?.annualFee ?? current["us-agent-annual-fee"] }
@@ -243,7 +272,7 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
         let screening;
         if (input.stage === "signed") {
           screening = await screen(input.client, input.owners ?? [], input.country ?? "CN");
-          if (screening.reading === "blocked") throw new Error(`${input.client} is on OFAC's SDN list; US persons may not deal with it: ${JSON.stringify(screening.parties.flatMap((p) => p.matches.filter((m) => m.blocking)).slice(0, 3))}`);
+          if (screening.reading !== "clear") throw new Error(`cannot sign ${input.client} with unresolved restricted-party screening (${screening.reading}); resolve the actual list and person before executing a contract`);
         }
         const fee = input.offer === "us-agent" ? terms.annualFee : null;
         return store.order({
@@ -264,7 +293,7 @@ export function usRepresentationOperations(binding, { fetch: fetchImpl, store = 
         const live = all.filter((e) => ["signed", "active", "renewed"].includes(e.stage));
         return Object.freeze({
           byStage: Object.fromEntries(REPRESENTATION_PROCEDURE.names.map((s) => [s, all.filter((e) => e.stage === s).length])),
-          agentFeesPerYear: live.filter((e) => e.offer === "us-agent").reduce((sum, e) => sum + (e.annualFee ?? 0), 0),
+          contractedAgentAnnualServiceFeesNotReceivedIncome: live.filter((e) => e.offer === "us-agent").reduce((sum, e) => sum + (e.annualFee ?? 0), 0),
           funnel: funnel(all.map((e) => e.history), REPRESENTATION_PROCEDURE),
           procedure: REPRESENTATION_PROCEDURE.stages,
           settlements: store.read("settlement", { enterprise: REPRESENTATION_ENTERPRISE }),
