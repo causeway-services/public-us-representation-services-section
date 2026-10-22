@@ -34,5 +34,10 @@
     "@red-cup-engineering/openfda-services-section": "workspace:*",
     "@red-cup-engineering/organizing": "workspace:*"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "funding": {
+    "type": "individual",
+    "url": "https://github.com/561-group/.github/blob/main/TIPS.md"
+  }
 }
