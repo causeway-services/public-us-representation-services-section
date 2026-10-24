@@ -144,7 +144,7 @@ representation-document-draft template=us-agent-service-agreement engagement=nin
 [Preparing FDA food facility renewals](lib/agency/skills/preparing-fda-food-facility-renewals/SKILL.md)
 is a **Practical Skill** of the existing US Representation Caller office,
 not a new U.S.-agent incumbency. Its source-owned producer
-`red-cup-engineering/public-us-representation-services-section/src/food-renewal-preparation.mjs`
+`red-cup-engineering/us-representation-engineering-services-section/src/food-renewal-preparation.mjs`
 creates English/Chinese, FDA-linked client briefs. The original
 `usRepresentationOperations` exports `representation-food-renewal-brief`;
 the separate [optional service agreement](content/text/documents/templates/food-renewal-preparation-agreement.md)
@@ -160,7 +160,7 @@ attestation and submission authority must be considered case-by-case.
 
 ```sh
 node --input-type=module -e '
-import {prepare2026FoodFacilityRenewal} from "./red-cup-engineering/public-us-representation-services-section/src/food-renewal-preparation.mjs";
+import {prepare2026FoodFacilityRenewal} from "./red-cup-engineering/us-representation-engineering-services-section/src/food-renewal-preparation.mjs";
 console.log(prepare2026FoodFacilityRenewal({
   facilityLocation:"domestic",registrationRequired:"unknown",
   registeredBeforeOctober:"unknown",ownershipChanged:"unknown",
@@ -176,7 +176,7 @@ annual representation renewal. The client or explicitly authorized submitter
 performs any official FDA account submission.
 
 ```sh
-cd red-cup-engineering/public-us-representation-services-section
+cd red-cup-engineering/us-representation-engineering-services-section
 npm test
 npm run check
 ```
