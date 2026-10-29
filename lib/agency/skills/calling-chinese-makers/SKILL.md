@@ -1,7 +1,6 @@
 ---
 name: calling-chinese-makers
-description: "Reach Chinese makers from the FDA establishments list and fair exhibitor lists, log each contact, screen a maker before an agreement, and send the agreement once it agrees."
-closure-kind: process
+description: Reach Chinese makers from the FDA establishments list and fair exhibitor lists, log each contact, screen a maker before an agreement, and send the agreement once it agrees.
 requires-capabilities:
   - representation-establishments-pull
   - representation-establishments-find
@@ -14,8 +13,10 @@ requires-capabilities:
   - enterprise
   - enterprise-bid
   - enterprise-contract-sign
----
+id: calling-chinese-makers
+skill-closure-kind: process
 
+---
 # Calling Chinese makers
 
 1. Take the next makers from the queue (`representation-call-queue`), or find a set by
