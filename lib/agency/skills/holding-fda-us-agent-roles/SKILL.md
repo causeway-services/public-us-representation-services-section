@@ -1,14 +1,15 @@
 ---
 name: holding-fda-us-agent-roles
 description: "Hold a client's FDA US agent role from signing through renewal: get named in the FDA's system, answer the FDA in US hours, forward every communication the same day, and record stages and payments."
-closure-kind: process
 requires-capabilities:
   - representation-engagement-record
   - representation-engagements
   - representation-payment-record
   - representation-document-draft
----
+id: holding-fda-us-agent-roles
+skill-closure-kind: process
 
+---
 # Holding FDA US agent roles
 
 1. At signing, record the engagement as signed with its commercial scope

@@ -1,14 +1,15 @@
 ---
 name: selling-makers-lines
-description: "Sell a represented Chinese maker's line to US buyers on commission, stand for the maker at shows and meetings, and record each sale's commission."
-closure-kind: process
+description: Sell a represented Chinese maker's line to US buyers on commission, stand for the maker at shows and meetings, and record each sale's commission.
 requires-capabilities:
   - representation-engagement-record
   - representation-engagements
   - representation-payment-record
   - representation-document-draft
----
+id: selling-makers-lines
+skill-closure-kind: process
 
+---
 # Selling makers' lines
 
 1. Sign a sales representative agreement per line and territory

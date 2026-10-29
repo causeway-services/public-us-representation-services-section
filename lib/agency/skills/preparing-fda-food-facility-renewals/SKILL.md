@@ -2,14 +2,15 @@
 name: preparing-fda-food-facility-renewals
 description: Produce an actual bilingual, official-source-linked 2026 food facility renewal brief and optional preparation-only customer engagement without an FDA filing, government affiliation, or implied U.S.-agent appointment.
 kind: practical-skill
-closure-kind: process
 requires-capabilities:
   - representation-food-renewal-brief
   - representation-engagement-record
   - representation-document-draft
   - representation-engagements
----
+id: preparing-fda-food-facility-renewals
+skill-closure-kind: process
 
+---
 # Prepare FDA food facility renewals — actual customer materials
 
 This is a [Practical Skill](https://github.com/561-group/561-group-services-section/blob/main/content/text/glossary/terms/practical-skill.md), deliberately distinct from the cross-domain [Modernize-and-Formalize Tactical Skill](https://github.com/coesite-operations/operations-services-section/blob/main/lib/agency/skills/modernize-and-formalize/SKILL.md). Source owner is the existing Causeway U.S. Representation service; its native operations use the original AOE enterprise journal and Coesite methods. This skill neither creates an FDA representative, provides agency authority, nor substitutes a separate registration engine.
